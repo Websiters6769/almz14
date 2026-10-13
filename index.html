@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>THE HOLLOW HOUR</title>
+<style>
+  :root{
+    --bg:#02050d; --bg2:#050b1a; --panel:#08122a; --line:#14284f;
+    --blue:#1f4fa8; --glow:#3b82f6; --ice:#9cc4ff; --text:#b9c9e6; --blood:#7a0f1f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:radial-gradient(ellipse at top,#071530 0%,var(--bg) 60%);
+    color:var(--text);font-family:Georgia,'Times New Roman',serif;
+    min-height:100vh;overflow-x:hidden;cursor:crosshair;
+  }
+  body::before{ /* film grain */
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:50;opacity:.07;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    animation:grain .6s steps(4) infinite;
+  }
+  @keyframes grain{0%{transform:translate(0,0)}25%{transform:translate(-3%,2%)}50%{transform:translate(2%,-3%)}75%{transform:translate(-2%,-1%)}100%{transform:translate(0,0)}}
+  #dark{ /* flashlight */
+    position:fixed;inset:0;z-index:40;pointer-events:none;opacity:0;transition:opacity .6s;
+    background:radial-gradient(circle 170px at var(--mx,50%) var(--my,50%),transparent 0,rgba(0,0,0,.55) 55%,rgba(0,0,0,.97) 100%);
+  }
+  body.flash #dark{opacity:1}
+  #flick{position:fixed;inset:0;z-index:45;background:#000;opacity:0;pointer-events:none}
+  #scare{
+    position:fixed;inset:0;z-index:99;display:none;align-items:center;justify-content:center;
+    background:#000;flex-direction:column;
+  }
+  #scare.on{display:flex;animation:shake .08s infinite}
+  #scare .face{font-size:min(40vw,320px);filter:drop-shadow(0 0 40px #3b82f6) contrast(1.4);line-height:1}
+  #scare p{color:#cfe1ff;letter-spacing:.5em;font-size:1.2rem;margin-top:1rem;text-transform:uppercase}
+  @keyframes shake{0%{transform:translate(0,0)}25%{transform:translate(-8px,6px)}50%{transform:translate(7px,-7px)}75%{transform:translate(-5px,-4px)}100%{transform:translate(4px,5px)}}
+
+  nav{
+    position:sticky;top:0;z-index:30;display:flex;justify-content:space-between;align-items:center;
+    padding:.9rem 2rem;background:rgba(2,5,13,.8);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);
+  }
+  nav .logo{letter-spacing:.35em;color:var(--ice);font-size:.95rem;text-transform:uppercase}
+  nav ul{display:flex;gap:1.6rem;list-style:none}
+  nav a{color:var(--text);text-decoration:none;font-size:.8rem;letter-spacing:.2em;text-transform:uppercase;transition:.3s}
+  nav a:hover{color:var(--glow);text-shadow:0 0 12px var(--glow)}
+  #clock{font-family:'Courier New',monospace;color:var(--glow);font-size:.85rem}
+
+  header.hero{
+    text-align:center;padding:7rem 1.5rem 5rem;position:relative;
+  }
+  .hero small{letter-spacing:.6em;color:var(--blue);text-transform:uppercase;font-size:.75rem}
+  .glitch{
+    font-size:clamp(2.8rem,10vw,7.5rem);letter-spacing:.12em;font-weight:400;color:var(--ice);
+    text-shadow:0 0 25px rgba(59,130,246,.6);position:relative;display:inline-block;margin:1rem 0;
+    animation:flicker 5s infinite;
+  }
+  .glitch::before,.glitch::after{
+    content:attr(data-t);position:absolute;inset:0;overflow:hidden;
+  }
+  .glitch::before{color:#2a6bff;left:2px;clip-path:inset(0 0 55% 0);animation:g1 2.4s infinite}
+  .glitch::after{color:#7a0f1f;left:-2px;clip-path:inset(55% 0 0 0);animation:g2 3.1s infinite}
+  @keyframes g1{0%,90%,100%{transform:translate(0)}92%{transform:translate(-5px,2px)}96%{transform:translate(4px,-2px)}}
+  @keyframes g2{0%,88%,100%{transform:translate(0)}91%{transform:translate(6px,-3px)}95%{transform:translate(-4px,2px)}}
+  @keyframes flicker{0%,18%,22%,62%,64%,100%{opacity:1}20%,63%{opacity:.35}21%{opacity:.8}}
+  .hero p.tag{max-width:560px;margin:1rem auto 2rem;line-height:1.8;font-style:italic;color:#8aa3cc}
+
+  .btn{
+    background:linear-gradient(180deg,#0b1a3b,#060e22);color:var(--ice);border:1px solid var(--blue);
+    padding:.85rem 1.5rem;font-family:inherit;letter-spacing:.2em;text-transform:uppercase;font-size:.78rem;
+    cursor:pointer;position:relative;transition:.25s;border-radius:2px;
+  }
+  .btn:hover{box-shadow:0 0 22px rgba(59,130,246,.55),inset 0 0 14px rgba(59,130,246,.25);transform:translateY(-2px);color:#fff}
+  .btn:active{transform:scale(.96)}
+  .btn.on{background:#0f2a62;border-color:var(--glow);box-shadow:0 0 18px var(--glow)}
+  .btn.danger{border-color:#8a1b2c;color:#ffb3bd}
+  .btn.danger:hover{box-shadow:0 0 24px rgba(180,20,40,.6);}
+
+  section{max-width:1100px;margin:0 auto;padding:3.5rem 1.5rem}
+  h2{font-weight:400;letter-spacing:.35em;text-transform:uppercase;color:var(--ice);font-size:1.15rem;margin-bottom:2rem;text-align:center}
+  h2::after{content:"";display:block;width:60px;height:1px;background:var(--glow);margin:1rem auto 0;box-shadow:0 0 10px var(--glow)}
+
+  .panel{
+    background:linear-gradient(160deg,var(--panel),#040918);border:1px solid var(--line);
+    padding:1.6rem;border-radius:4px;box-shadow:0 0 40px rgba(0,0,0,.6);
+  }
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.4rem}
+  .controls{display:flex;flex-wrap:wrap;gap:.8rem;justify-content:center;margin-bottom:1.6rem}
+
+  .monitor{display:grid;grid-template-columns:2fr 1fr;gap:1.4rem}
+  @media(max-width:760px){.monitor{grid-template-columns:1fr}nav ul{display:none}}
+  canvas{width:100%;height:150px;background:#02060f;border:1px solid var(--line);display:block}
+  .stat{margin-bottom:1.1rem}
+  .stat label{display:flex;justify-content:space-between;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:#6f88b8;margin-bottom:.4rem}
+  .stat b{color:var(--glow);font-family:'Courier New',monospace}
+  .bar{height:8px;background:#030812;border:1px solid var(--line)}
+  .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#1f4fa8,#6aa8ff,#a01830);transition:width .5s}
+
+  .card{padding:1.6rem;border:1px solid var(--line);background:rgba(8,18,42,.6);transition:.4s;cursor:pointer;position:relative;overflow:hidden}
+  .card:hover{border-color:var(--glow);transform:translateY(-6px);box-shadow:0 10px 40px rgba(31,79,168,.4)}
+  .card .num{font-size:2.6rem;color:rgba(59,130,246,.25);font-family:'Courier New',monospace}
+  .card h3{font-weight:400;letter-spacing:.2em;color:var(--ice);text-transform:uppercase;font-size:.95rem;margin:.4rem 0}
+  .card p{font-size:.88rem;line-height:1.7;color:#8aa3cc}
+  .card.locked p{filter:blur(6px);transition:.5s}
+  .card.locked:hover p{filter:blur(2px)}
+  .card .rev{margin-top:.8rem;font-size:.7rem;letter-spacing:.2em;color:var(--glow);text-transform:uppercase}
+
+  #whisper{
+    min-height:3.2rem;text-align:center;font-style:italic;color:#7fa0d8;font-size:1.15rem;
+    text-shadow:0 0 14px rgba(59,130,246,.5);margin-top:1rem;transition:opacity .8s;
+  }
+  .wall{display:flex;flex-direction:column;gap:.6rem;max-height:220px;overflow:auto;margin-top:1.2rem;padding-right:.4rem}
+  .wall div{border-left:2px solid var(--blue);padding:.5rem .9rem;background:rgba(10,25,60,.5);font-size:.9rem;animation:fadein .8s}
+  .wall em{color:#5e78a8;font-size:.72rem;margin-left:.6rem;font-family:'Courier New',monospace}
+  @keyframes fadein{from{opacity:0;transform:translateX(-14px)}to{opacity:1}}
+  form{display:flex;gap:.7rem;flex-wrap:wrap;justify-content:center}
+  input{
+    flex:1;min-width:200px;background:#030917;border:1px solid var(--line);color:var(--ice);
+    padding:.85rem 1rem;font-family:inherit;outline:none;transition:.3s;letter-spacing:.08em
+  }
+  input:focus{border-color:var(--glow);box-shadow:0 0 16px rgba(59,130,246,.4)}
+  #countdown{font-family:'Courier New',monospace;font-size:clamp(2rem,7vw,4rem);text-align:center;color:var(--glow);text-shadow:0 0 20px var(--glow);letter-spacing:.15em}
+  footer{text-align:center;padding:3rem 1rem;color:#4a628f;font-size:.75rem;letter-spacing:.25em;border-top:1px solid var(--line);text-transform:uppercase}
+  .eyes{position:fixed;z-index:35;font-size:1.6rem;pointer-events:none;opacity:0;transition:opacity .4s;color:#6aa8ff;text-shadow:0 0 12px #3b82f6}
+</style>
+</head>
+<body>
+<div id="dark"></div>
+<div id="flick"></div>
+<div id="scare"><div class="face">💀</div><p>It sees you</p></div>
+<div class="eyes" id="eyes">👁 👁</div>
+
+<nav>
+  <div class="logo">The Hollow Hour</div>
+  <ul>
+    <li><a href="#ritual">Ritual</a></li>
+    <li><a href="#pulse">Pulse</a></li>
+    <li><a href="#files">Case Files</a></li>
+    <li><a href="#wall">The Wall</a></li>
+  </ul>
+  <div id="clock">00:00:00</div>
+</nav>
+
+<header class="hero">
+  <small>A psychological thriller</small><br>
+  <h1 class="glitch" data-t="THE HOLLOW HOUR">THE HOLLOW HOUR</h1>
+  <p class="tag">At 3:07 every night the house exhales. Something in the walls has learned your name. Do not turn around.</p>
+  <button class="btn" onclick="document.getElementById('ritual').scrollIntoView()">Enter if you dare</button>
+</header>
+
+<section id="ritual">
+  <h2>The Ritual</h2>
+  <div class="panel">
+    <div class="controls">
+      <button class="btn" id="bFlash">🔦 Flashlight</button>
+      <button class="btn" id="bDrone">🌑 Ambient Dread</button>
+      <button class="btn" id="bBeat">🫀 Heartbeat</button>
+      <button class="btn" id="bFlicker">💡 Kill the Lights</button>
+      <button class="btn" id="bWhisper">🗣 Listen</button>
+      <button class="btn" id="bEyes">👁 Watchers</button>
+      <button class="btn danger" id="bScare">☠ Do Not Press</button>
+    </div>
+    <div id="whisper">The room is quiet. Too quiet.</div>
+  </div>
+</section>
+
+<section id="pulse">
+  <h2>Vital Signs</h2>
+  <div class="monitor">
+    <div class="panel"><canvas id="ecg" width="800" height="150"></canvas></div>
+    <div class="panel">
+      <div class="stat"><label>Heart Rate <b id="bpm">72 BPM</b></label><div class="bar"><i id="bpmBar"></i></div></div>
+      <div class="stat"><label>Fear Level <b id="fearTxt">0%</b></label><div class="bar"><i id="fearBar"></i></div></div>
+      <div class="stat"><label>Souls Watching <b id="souls">13</b></label></div>
+      <div class="stat"><label>Time In Here <b id="timer">00:00</b></label></div>
+      <button class="btn" id="bCalm" style="width:100%">Breathe</button>
+    </div>
+  </div>
+</section>
+
+<section id="countdown-s">
+  <h2>Until 3:07 AM</h2>
+  <div class="panel"><div id="countdown">--:--:--</div></div>
+</section>
+
+<section id="files">
+  <h2>Case Files</h2>
+  <div class="grid" id="cards"></div>
+</section>
+
+<section id="wall">
+  <h2>The Wall</h2>
+  <div class="panel">
+    <form id="form">
+      <input id="name" placeholder="Carve your name into the wall…" maxlength="40" autocomplete="off">
+      <button class="btn">Carve</button>
+    </form>
+    <div class="wall" id="wallList">
+      <div>Mara was here. She isn't anymore.<em>03:07</em></div>
+      <div>Don't check the basement.<em>02:41</em></div>
+    </div>
+  </div>
+</section>
+
+<footer>© The Hollow Hour · Sleep is not safe</footer>
+
+<script>
+const $=id=>document.getElementById(id);
+let fear=0, bpm=72, calm=false;
+
+/* ---------- cursor flashlight ---------- */
+document.addEventListener('mousemove',e=>{
+  document.documentElement.style.setProperty('--mx',e.clientX+'px');
+  document.documentElement.style.setProperty('--my',e.clientY+'px');
+});
+document.addEventListener('touchmove',e=>{
+  const t=e.touches[0];
+  document.documentElement.style.setProperty('--mx',t.clientX+'px');
+  document.documentElement.style.setProperty('--my',t.clientY+'px');
+},{passive:true});
+
+/* ---------- audio ---------- */
+let ac, droneNodes=null, beatTimer=null;
+function ctx(){ if(!ac) ac=new (window.AudioContext||window.webkitAudioContext)(); if(ac.state==='suspended') ac.resume(); return ac; }
+function toggleDrone(on){
+  const a=ctx();
+  if(on){
+    const g=a.createGain(); g.gain.value=0; g.gain.linearRampToValueAtTime(.12,a.currentTime+3); g.connect(a.destination);
+    const o1=a.createOscillator(), o2=a.createOscillator(), lfo=a.createOscillator(), lg=a.createGain();
+    o1.type='sawtooth'; o1.frequency.value=48; o2.type='sine'; o2.frequency.value=51.5;
+    const f=a.createBiquadFilter(); f.type='lowpass'; f.frequency.value=220;
+    lfo.frequency.value=.15; lg.gain.value=60; lfo.connect(lg); lg.connect(f.frequency);
+    o1.connect(f); o2.connect(f); f.connect(g);
+    o1.start(); o2.start(); lfo.start();
+    droneNodes={g,o1,o2,lfo};
+  }else if(droneNodes){
+    const {g,o1,o2,lfo}=droneNodes; g.gain.linearRampToValueAtTime(0,a.currentTime+1.2);
+    setTimeout(()=>{o1.stop();o2.stop();lfo.stop()},1300); droneNodes=null;
+  }
+}
+function thump(){
+  const a=ctx(), t=a.currentTime;
+  [0,.18].forEach((d,i)=>{
+    const o=a.createOscillator(), g=a.createGain();
+    o.frequency.setValueAtTime(i?65:80,t+d); o.frequency.exponentialRampToValueAtTime(30,t+d+.15);
+    g.gain.setValueAtTime(.5,t+d); g.gain.exponentialRampToValueAtTime(.001,t+d+.18);
+    o.connect(g); g.connect(a.destination); o.start(t+d); o.stop(t+d+.2);
+  });
+}
+function beatLoop(){ thump(); beatTimer=setTimeout(beatLoop,60000/bpm); }
+function sting(){
+  const a=ctx(), t=a.currentTime, len=a.sampleRate*1.2, buf=a.createBuffer(1,len,a.sampleRate), d=buf.getChannelData(0);
+  for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2);
+  const s=a.createBufferSource(); s.buffer=buf;
+  const f=a.createBiquadFilter(); f.type='bandpass'; f.frequency.value=1800; f.Q.value=.7;
+  const g=a.createGain(); g.gain.value=.9; s.connect(f); f.connect(g); g.connect(a.destination); s.start();
+  const o=a.createOscillator(), og=a.createGain(); o.type='sawtooth';
+  o.frequency.setValueAtTime(900,t); o.frequency.exponentialRampToValueAtTime(60,t+.9);
+  og.gain.setValueAtTime(.4,t); og.gain.exponentialRampToValueAtTime(.001,t+1); o.connect(og); og.connect(a.destination); o.start(); o.stop(t+1);
+}
+
+/* ---------- buttons ---------- */
+function bump(n){ fear=Math.min(100,fear+n); }
+$('bFlash').onclick=e=>{ document.body.classList.toggle('flash'); e.currentTarget.classList.toggle('on'); bump(6); };
+$('bDrone').onclick=e=>{ const on=!e.currentTarget.classList.contains('on'); e.currentTarget.classList.toggle('on',on); toggleDrone(on); bump(5); };
+$('bBeat').onclick=e=>{
+  const on=!e.currentTarget.classList.contains('on'); e.currentTarget.classList.toggle('on',on);
+  if(on){ctx();beatLoop();} else clearTimeout(beatTimer);
+};
+$('bFlicker').onclick=()=>{
+  const f=$('flick'); let n=0; bump(10);
+  const iv=setInterval(()=>{ f.style.opacity=Math.random()>.4?.95:.1; if(++n>14){clearInterval(iv);f.style.opacity=0;} },90);
+};
+const whispers=["Behind you.","Why did you stop breathing?","I can hear your heart.","She's still in the walls.","You left the door open.","Count the shadows. There's one more.","Don't look at the window.","It remembers your name.","Three knocks. Then silence.","You are not alone in this tab."];
+let wTO;
+$('bWhisper').onclick=()=>{
+  const el=$('whisper'); el.style.opacity=0; bump(8);
+  setTimeout(()=>{ el.textContent=whispers[Math.random()*whispers.length|0]; el.style.opacity=1; },300);
+  clearTimeout(wTO); wTO=setTimeout(()=>{el.style.opacity=0},5000);
+};
+let eyeIv=null;
+$('bEyes').onclick=e=>{
+  const on=!e.currentTarget.classList.contains('on'); e.currentTarget.classList.toggle('on',on);
+  const eyes=$('eyes');
+  if(on){
+    eyeIv=setInterval(()=>{
+      eyes.style.left=Math.random()*85+'vw'; eyes.style.top=Math.random()*85+'vh';
+      eyes.style.opacity=.85; setTimeout(()=>eyes.style.opacity=0,900); bump(2);
+    },2800);
+  }else{ clearInterval(eyeIv); eyes.style.opacity=0; }
+};
+$('bScare').onclick=()=>{
+  const s=$('scare'); s.classList.add('on'); sting(); fear=100; bpm=165;
+  setTimeout(()=>s.classList.remove('on'),1100);
+};
+$('bCalm').onclick=()=>{ calm=true; fear=Math.max(0,fear-35); setTimeout(()=>calm=false,2000); };
+
+/* ---------- ECG canvas ---------- */
+const cv=$('ecg'), c=cv.getContext('2d'); let x=0, phase=0; const W=cv.width,H=cv.height; const trace=new Array(W).fill(H/2);
+function ecgY(p){
+  // p in 0..1 across one beat
+  if(p<.10) return -6*Math.sin(p/.10*Math.PI);
+  if(p>.18&&p<.21) return 8*((p-.18)/.03);
+  if(p>=.21&&p<.25) return 8-80*((p-.21)/.04);
+  if(p>=.25&&p<.30) return -72+100*((p-.25)/.05);
+  if(p>=.30&&p<.33) return 28-28*((p-.30)/.03);
+  if(p>.45&&p<.65) return -14*Math.sin((p-.45)/.2*Math.PI);
+  return 0;
+}
+function drawEcg(){
+  const speed=2+bpm/60;
+  for(let i=0;i<speed;i++){
+    phase+= (bpm/60)/ (60*speed);
+    if(phase>=1) phase-=1;
+    trace[x]=H/2+ecgY(phase)+(Math.random()-.5)*(1+fear/25);
+    x=(x+1)%W;
+  }
+  c.fillStyle='rgba(2,6,15,1)'; c.fillRect(0,0,W,H);
+  c.strokeStyle='rgba(20,40,79,.5)'; c.lineWidth=1;
+  for(let gx=0;gx<W;gx+=40){c.beginPath();c.moveTo(gx,0);c.lineTo(gx,H);c.stroke();}
+  for(let gy=0;gy<H;gy+=30){c.beginPath();c.moveTo(0,gy);c.lineTo(W,gy);c.stroke();}
+  c.strokeStyle= fear>75?'#ff3b5c':'#4d94ff'; c.lineWidth=2; c.shadowColor=c.strokeStyle; c.shadowBlur=10;
+  c.beginPath();
+  for(let i=0;i<W;i++){ if(Math.abs(i-x)<12){ c.moveTo(i,trace[i]); continue;} i?c.lineTo(i,trace[i]):c.moveTo(i,trace[i]); }
+  c.stroke(); c.shadowBlur=0;
+  requestAnimationFrame(drawEcg);
+}
+drawEcg();
+
+/* ---------- live stats loop ---------- */
+const start=Date.now();
+setInterval(()=>{
+  if(!calm) fear=Math.max(0,fear-0.4); else fear=Math.max(0,fear-1.5);
+  const target=60+fear*1.1;
+  bpm+= (target-bpm)*.15;
+  const b=Math.round(bpm);
+  $('bpm').textContent=b+' BPM'; $('bpmBar').style.width=Math.min(100,(b-50)/1.2)+'%';
+  $('fearTxt').textContent=Math.round(fear)+'%'; $('fearBar').style.width=fear+'%';
+  const s=((Date.now()-start)/1000)|0;
+  $('timer').textContent=String(s/60|0).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+  if(fear>85 && Math.random()<.05) document.body.style.filter='hue-rotate(-12deg) contrast(1.15)'; else document.body.style.filter='';
+},250);
+setInterval(()=>{ const el=$('souls'); let v=+el.textContent; v=Math.max(3,v+(Math.random()>.5?1:-1)); el.textContent=v; },2000);
+
+/* ---------- clock + countdown ---------- */
+function tick(){
+  const n=new Date();
+  $('clock').textContent=n.toLocaleTimeString('en-GB');
+  const t=new Date(n); t.setHours(3,7,0,0); if(t<=n) t.setDate(t.getDate()+1);
+  const d=t-n, h=d/3600000|0, m=d%3600000/60000|0, s=d%60000/1000|0;
+  $('countdown').textContent=[h,m,s].map(v=>String(v).padStart(2,'0')).join(':');
+}
+setInterval(tick,1000); tick();
+
+/* ---------- case files ---------- */
+const files=[
+  ["01","The Nursery","Every night the mobile spins on its own. Last week it started humming a lullaby nobody taught it."],
+  ["02","Room 307","The hotel has only 306 rooms. The keys keep turning up in guests' pockets."],
+  ["03","The Static","Channel 0 broadcasts a view of your living room. Live. From behind the couch."],
+  ["04","Lake Marrow","The water is cold in July. Divers report footsteps on the bottom."],
+  ["05","The Last Message","Voicemail from a number that was disconnected in 1998. It says: 'I'm almost there.'"],
+  ["06","The Hollow Hour","3:07 AM. The only time the thing in the walls can be heard. And it is listening back."]
+];
+const grid=$('cards');
+files.forEach(([n,t,p])=>{
+  const d=document.createElement('div'); d.className='card locked';
+  d.innerHTML=`<div class="num">${n}</div><h3>${t}</h3><p>${p}</p><div class="rev">Click to unseal</div>`;
+  d.onclick=()=>{ if(d.classList.contains('locked')){ d.classList.remove('locked'); d.querySelector('.rev').textContent='Unsealed'; bump(12);} else { d.classList.add('locked'); d.querySelector('.rev').textContent='Click to unseal'; } };
+  grid.appendChild(d);
+});
+
+/* ---------- the wall ---------- */
+$('form').onsubmit=e=>{
+  e.preventDefault();
+  const v=$('name').value.trim(); if(!v) return;
+  const div=document.createElement('div'); const safe=document.createTextNode(v+' was here.');
+  div.appendChild(safe);
+  const em=document.createElement('em'); em.textContent=new Date().toLocaleTimeString('en-GB'); div.appendChild(em);
+  $('wallList').prepend(div); $('name').value=''; bump(7);
+  setTimeout(()=>{
+    const r=document.createElement('div'); r.textContent='…and now '+v+' is part of the house.'; r.style.borderColor='#8a1b2c';
+    $('wallList').prepend(r);
+  },2500);
+};
+/* random ghost carvings in real time */
+const ghosts=["Help me.","Behind the mirror.","It's under the bed.","Run.","Why are you still here?","Don't answer the phone."];
+setInterval(()=>{
+  const d=document.createElement('div'); d.textContent=ghosts[Math.random()*ghosts.length|0];
+  const em=document.createElement('em'); em.textContent=new Date().toLocaleTimeString('en-GB'); d.appendChild(em);
+  $('wallList').prepend(d); if($('wallList').children.length>30) $('wallList').lastChild.remove();
+},14000);
+</script>
+</body>
+</html>
